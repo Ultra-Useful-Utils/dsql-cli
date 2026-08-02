@@ -59,13 +59,19 @@ fn v1_user_documentation_is_present() {
 }
 
 #[test]
-fn cargo_audit_action_receives_the_github_token() {
+fn cargo_audit_is_pinned_and_installed_with_its_lockfile() {
     let workflow = read_repository_file(".github/workflows/ci.yml");
 
-    assert!(
-        workflow.contains("token: ${{ secrets.GITHUB_TOKEN }}"),
-        "rustsec/audit-check requires the GitHub token input"
-    );
+    for required in [
+        "cargo install cargo-audit --version 0.22.2 --locked",
+        "cargo audit",
+    ] {
+        assert!(
+            workflow.contains(required),
+            "CI cargo audit must contain `{required}`"
+        );
+    }
+    assert!(!workflow.contains("rustsec/audit-check"));
 }
 
 fn release_workflow() -> PathBuf {
@@ -381,8 +387,16 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
     assert_eq!(dependency_names, ["release-evidence", "crates-io-dry-run"]);
     assert_eq!(
         text(field(publish, "if", "publish job"), "publish condition"),
-        "github.event_name == 'workflow_dispatch' && inputs.publish",
-        "publication must require an explicit dispatch approval"
+        "startsWith(github.ref, 'refs/tags/v')",
+        "publication must only run for version tags"
+    );
+    assert_eq!(
+        text(
+            field(publish, "environment", "publish job"),
+            "publish environment"
+        ),
+        "release",
+        "publication must use the release environment"
     );
 
     let dry_run = job(&workflow, "crates-io-dry-run");
@@ -402,10 +416,24 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
     );
 
     let publish_steps = sequence(field(publish, "steps", "publish job"), "publish steps");
-    let publish = step_with_name(
-        publish_steps,
-        "Publish crates.io package after protected approval",
+    let validate_tag = step_run(
+        step_with_name(
+            publish_steps,
+            "Validate release tag matches package version",
+        ),
+        "Validate release tag matches package version",
     );
+    for required in [
+        "cargo metadata --no-deps",
+        "v${package_version}",
+        "GITHUB_REF_NAME",
+    ] {
+        assert!(
+            validate_tag.contains(required),
+            "release tag validation must contain `{required}`"
+        );
+    }
+    let publish = step_with_name(publish_steps, "Publish crates.io package");
     let publish_environment = mapping(
         field(publish, "env", "crates.io publish step"),
         "crates.io publish environment",
@@ -420,7 +448,7 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
             "${{ secrets.CRATES_IO_API_KEY }}"
         ),
         "${{ secrets.CRATES_IO_API_KEY }}",
-        "the manual publish job must use the existing CRATES_IO_API_KEY secret"
+        "the initial tagged publish must use the existing CRATES_IO_API_KEY secret"
     );
 }
 

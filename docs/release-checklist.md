@@ -29,7 +29,7 @@ publication action and must not be inferred from CI configuration.
   validates all four target definitions and their archive/smoke commands, and
   builds, checksums, extracts, and smokes the native-host archive.
 - [x] Validate workflow checksum coverage, uploaded SBOM/dependency/license
-  evidence, provenance subjects, crates.io dry run, and explicit publication gate.
+  evidence, provenance subjects, crates.io dry run, and tagged publication gate.
 
 ## Automated local compatibility record (2026-08-01)
 
@@ -42,7 +42,7 @@ publication action and must not be inferred from CI configuration.
   each of the four target/runner/archive definitions, required archive entries,
   packaged `--help` and `--version` commands, checksum glob coverage,
   SBOM/dependency/license uploads, provenance subjects, the crates.io package
-  dry run, and the explicit workflow-dispatch publication gate. It also creates
+  dry run, and the version-tag publication gate. It also creates
   and smokes an archive from the current native-host test binary.
 - This is local contract evidence only. It does **not** execute the Linux arm64
   or macOS artifacts, run a live Aurora DSQL suite, publish an artifact, or
@@ -56,7 +56,16 @@ publication action and must not be inferred from CI configuration.
 - [ ] Run the separately authorized mutating suite only against its confirmed
   development cluster.
 - [ ] Review no critical/high dependency or code-security findings remain.
+- [ ] Protect the GitHub `release` environment and version tags with the
+  repository's required-reviewer and tag rules before pushing a release tag.
+- [ ] Confirm `CRATES_IO_API_KEY` is available for the initial crates.io publish.
+  After the first release, configure crates.io Trusted Publishing for
+  `.github/workflows/release.yml`, migrate the job to
+  `rust-lang/crates-io-auth-action@v1`, and remove the long-lived secret.
 - [ ] Publish no artifacts until the RC review recommends the M6 gate.
+- [ ] Create and push a tag exactly matching `v` plus the `Cargo.toml` version;
+  the release workflow publishes crates.io first and then creates the GitHub
+  Release with archives and evidence.
 - [ ] After approved publication, verify release archives, checksums,
   attestations, SBOM, `cargo install dsql-cli`, and first-run documentation on
   all four clean hosts.
