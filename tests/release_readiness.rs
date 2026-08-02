@@ -74,6 +74,32 @@ fn cargo_audit_is_pinned_and_installed_with_its_lockfile() {
     assert!(!workflow.contains("rustsec/audit-check"));
 }
 
+#[test]
+fn workflows_install_the_exact_repository_toolchain() {
+    let expected = "1.94.1";
+    let toolchain = read_repository_file("rust-toolchain.toml");
+    assert!(
+        toolchain.contains(&format!("channel = \"{expected}\"")),
+        "rust-toolchain.toml must pin Rust {expected}"
+    );
+
+    for path in [".github/workflows/ci.yml", ".github/workflows/release.yml"] {
+        let workflow = read_repository_file(path);
+        let configured = workflow
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix("- uses: dtolnay/rust-toolchain@"))
+            .collect::<Vec<_>>();
+        assert!(
+            !configured.is_empty(),
+            "{path} must install a Rust toolchain"
+        );
+        assert!(
+            configured.iter().all(|toolchain| *toolchain == expected),
+            "{path} toolchains must match rust-toolchain.toml: {configured:?}"
+        );
+    }
+}
+
 fn release_workflow() -> PathBuf {
     let workflows = repository_path(".github/workflows");
     let entries = fs::read_dir(&workflows)
