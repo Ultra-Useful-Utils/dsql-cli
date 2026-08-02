@@ -211,7 +211,7 @@ fn release_workflow_defines_and_validates_all_four_artifact_contracts() {
     let expected = [
         ("ubuntu-24.04", "x86_64-unknown-linux-musl"),
         ("ubuntu-24.04-arm", "aarch64-unknown-linux-musl"),
-        ("macos-13", "x86_64-apple-darwin"),
+        ("macos-15-intel", "x86_64-apple-darwin"),
         ("macos-14", "aarch64-apple-darwin"),
     ];
     assert_eq!(
