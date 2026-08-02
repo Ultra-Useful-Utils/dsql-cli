@@ -428,6 +428,18 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
         "release",
         "publication must use the release environment"
     );
+    let publish_permissions = mapping(
+        field(publish, "permissions", "publish job"),
+        "publish permissions",
+    );
+    assert_eq!(
+        text(
+            field(publish_permissions, "id-token", "publish permissions"),
+            "publish id-token permission",
+        ),
+        "write",
+        "trusted publishing requires GitHub's OIDC token permission"
+    );
 
     let dry_run = job(&workflow, "crates-io-dry-run");
     let dry_steps = sequence(
@@ -443,6 +455,83 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
                     .and_then(Value::as_str)
                     == Some("cargo package --locked")
             })
+    );
+
+    let trusted_publishing_check = job(&workflow, "trusted-publishing-check");
+    assert_eq!(
+        text(
+            field(
+                trusted_publishing_check,
+                "if",
+                "trusted-publishing check job",
+            ),
+            "trusted-publishing check condition",
+        ),
+        "github.event_name == 'workflow_dispatch'",
+        "trusted-publishing validation must be an explicit manual action"
+    );
+    assert_eq!(
+        text(
+            field(
+                trusted_publishing_check,
+                "environment",
+                "trusted-publishing check job",
+            ),
+            "trusted-publishing check environment",
+        ),
+        "release",
+        "trusted-publishing validation must use the configured crates.io environment identity"
+    );
+    let trusted_publishing_permissions = mapping(
+        field(
+            trusted_publishing_check,
+            "permissions",
+            "trusted-publishing check job",
+        ),
+        "trusted-publishing check permissions",
+    );
+    assert_eq!(
+        text(
+            field(
+                trusted_publishing_permissions,
+                "id-token",
+                "trusted-publishing check permissions",
+            ),
+            "trusted-publishing check id-token permission",
+        ),
+        "write",
+        "trusted-publishing validation requires GitHub's OIDC token permission"
+    );
+    let trusted_publishing_steps = sequence(
+        field(
+            trusted_publishing_check,
+            "steps",
+            "trusted-publishing check job",
+        ),
+        "trusted-publishing check steps",
+    );
+    let trusted_publishing_auth =
+        step_with_name(trusted_publishing_steps, "Authenticate to crates.io");
+    assert_eq!(
+        text(
+            field(
+                trusted_publishing_auth,
+                "uses",
+                "trusted-publishing authentication step",
+            ),
+            "trusted-publishing authentication action",
+        ),
+        "rust-lang/crates-io-auth-action@v1",
+        "manual validation must use the crates.io OIDC exchange action"
+    );
+    let confirm_token = step_with_name(trusted_publishing_steps, "Confirm short-lived token");
+    assert_eq!(
+        text(
+            field(confirm_token, "run", "trusted-publishing confirmation step"),
+            "trusted-publishing confirmation command",
+        ),
+        "test -n \"$CARGO_REGISTRY_TOKEN\"",
+        "manual validation must fail when crates.io does not return a token"
     );
 
     let publish_steps = sequence(field(publish, "steps", "publish job"), "publish steps");
@@ -463,6 +552,24 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
             "release tag validation must contain `{required}`"
         );
     }
+    let crates_io_auth = step_with_name(publish_steps, "Authenticate to crates.io");
+    assert_eq!(
+        text(
+            field(crates_io_auth, "uses", "crates.io authentication step"),
+            "crates.io authentication action",
+        ),
+        "rust-lang/crates-io-auth-action@v1",
+        "tagged publication must exchange GitHub OIDC identity for a short-lived crates.io token"
+    );
+    assert_eq!(
+        text(
+            field(crates_io_auth, "id", "crates.io authentication step"),
+            "crates.io authentication step id",
+        ),
+        "crates-io-auth",
+        "the authentication step needs a stable id for its token output"
+    );
+
     let publish = step_with_name(publish_steps, "Publish crates.io package");
     let publish_environment = mapping(
         field(publish, "env", "crates.io publish step"),
@@ -475,10 +582,10 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
                 "CARGO_REGISTRY_TOKEN",
                 "crates.io publish environment",
             ),
-            "${{ secrets.CRATES_IO_API_KEY }}"
+            "${{ steps.crates-io-auth.outputs.token }}"
         ),
-        "${{ secrets.CRATES_IO_API_KEY }}",
-        "the initial tagged publish must use the existing CRATES_IO_API_KEY secret"
+        "${{ steps.crates-io-auth.outputs.token }}",
+        "tagged publication must use the short-lived trusted-publishing token"
     );
 
     let github_release = publish_steps

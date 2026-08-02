@@ -1,8 +1,9 @@
 # Compatibility matrix and release checklist
 
-This is the Milestone 6 release-candidate record. A checked local item has
-repository-local evidence; an unchecked item requires an authorized live or
-publication action and must not be inferred from CI configuration.
+This records the Milestone 6 and v1.0.0 release evidence. A checked local item
+has repository-local evidence; an unchecked item still requires an authorized
+live or external validation action and must not be inferred from CI
+configuration.
 
 ## Compatibility matrix
 
@@ -44,10 +45,9 @@ publication action and must not be inferred from CI configuration.
   SBOM/dependency/license uploads, provenance subjects, the crates.io package
   dry run, and the version-tag publication gate. It also creates
   and smokes an archive from the current native-host test binary.
-- This is local contract evidence only. It does **not** execute the Linux arm64
-  or macOS artifacts, run a live Aurora DSQL suite, publish an artifact, or
-  perform post-publication verification. Those unchecked protected checklist
-  items remain required.
+- This local contract does **not** execute the Linux arm64 or macOS artifacts or
+  run a live Aurora DSQL suite. Publication and Linux x86_64 verification are
+  recorded below; the unchecked compatibility items remain required.
 
 ## Protected external checklist
 
@@ -58,17 +58,20 @@ publication action and must not be inferred from CI configuration.
 - [ ] Review no critical/high dependency or code-security findings remain.
 - [x] Protect the GitHub `release` environment and version tags with the
   repository's required-reviewer and tag rules before pushing a release tag.
-- [x] Confirm `CRATES_IO_API_KEY` is available for the initial crates.io publish.
-  After the first release, configure crates.io Trusted Publishing for
-  `.github/workflows/release.yml`, migrate the job to
-  `rust-lang/crates-io-auth-action@v1`, and remove the long-lived secret.
-- [ ] Publish no artifacts until the RC review recommends the M6 gate.
+- [x] Used `CRATES_IO_API_KEY` only for the initial crates.io publication.
+- [x] Configure crates.io Trusted Publishing for `.github/workflows/release.yml`
+  with the protected `release` environment and migrate the job to
+  `rust-lang/crates-io-auth-action@v1`.
+- [ ] Run the protected manual OIDC authentication check, then remove the
+  long-lived secret and require trusted publishing for new versions.
+- [x] Published no artifacts until the RC review recommended the M6 gate.
 - [x] Create and push a tag exactly matching `v` plus the `Cargo.toml` version;
   the release workflow publishes crates.io first and then creates the GitHub
   Release with archives and evidence.
-- [ ] After approved publication, verify release archives, checksums,
-  attestations, SBOM, `cargo install dsql-cli`, and first-run documentation on
-  all four clean hosts.
+- [ ] Complete release verification on all four clean hosts. Checksums,
+  attestations, SBOM, `cargo install dsql-cli`, first-run documentation, and the
+  Linux x86_64 archive have been verified; Linux arm64 and both macOS hosts
+  remain pending.
 
 ## v1.0.0 publication record (2026-08-02)
 
@@ -82,8 +85,8 @@ publication action and must not be inferred from CI configuration.
 
 ## Consumer verification
 
-After publication, download the release checksum file and verify the selected
-archive before extraction:
+Download the release checksum file and verify the selected archive before
+extraction:
 
 ```sh
 sha256sum --check SHA256SUMS
