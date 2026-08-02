@@ -79,7 +79,7 @@ jobs:
       - name: Create checksums and dependency/license report
         shell: bash
         run: |
-           sha256sum dist/artifacts/*.tar.gz > dist/SHA256SUMS
+           (cd dist/artifacts && sha256sum *.tar.gz) > dist/SHA256SUMS
            cargo tree --locked --edges normal > dist/DEPENDENCIES.txt
            cargo install cargo-deny --version 0.20.2 --locked
            cargo deny check licenses

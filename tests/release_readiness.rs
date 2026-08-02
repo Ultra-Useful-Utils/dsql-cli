@@ -307,7 +307,7 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
         "Create checksums and dependency/license report",
     );
     for required in [
-        "sha256sum dist/artifacts/*.tar.gz > dist/SHA256SUMS",
+        "(cd dist/artifacts && sha256sum *.tar.gz) > dist/SHA256SUMS",
         "cargo tree --locked --edges normal > dist/DEPENDENCIES.txt",
         "cargo install cargo-deny --version 0.20.2 --locked",
         "cargo deny check licenses",
