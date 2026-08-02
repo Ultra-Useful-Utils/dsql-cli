@@ -98,7 +98,6 @@ jobs:
             dist/DEPENDENCIES.txt
             dist/LICENSES.json
             dist/sbom.spdx.json
-            CHANGELOG.md
           if-no-files-found: error
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
@@ -147,6 +146,7 @@ jobs:
         with:
           generate_release_notes: true
           body_path: CHANGELOG.md
+          fail_on_unmatched_files: true
           files: |
             dist/*.tar.gz
             dist/SHA256SUMS

@@ -375,6 +375,10 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
             "evidence upload must include `{required}`"
         );
     }
+    assert!(
+        !uploaded_paths.contains("CHANGELOG.md"),
+        "evidence upload paths must share the `dist` root so downloads are not nested"
+    );
 
     let attestation = steps
         .iter()
@@ -475,6 +479,30 @@ fn release_workflow_covers_checksums_supply_chain_evidence_provenance_and_public
         ),
         "${{ secrets.CRATES_IO_API_KEY }}",
         "the initial tagged publish must use the existing CRATES_IO_API_KEY secret"
+    );
+
+    let github_release = publish_steps
+        .iter()
+        .map(|step| mapping(step, "workflow step"))
+        .find(|step| {
+            step.get(Value::String("uses".to_owned()))
+                .and_then(Value::as_str)
+                == Some("softprops/action-gh-release@v2")
+        })
+        .expect("tagged publication must create a GitHub release");
+    let github_release_inputs = mapping(
+        field(github_release, "with", "GitHub release step"),
+        "GitHub release inputs",
+    );
+    assert_eq!(
+        field(
+            github_release_inputs,
+            "fail_on_unmatched_files",
+            "GitHub release inputs",
+        )
+        .as_bool(),
+        Some(true),
+        "GitHub release publication must fail when a required asset is missing"
     );
 }
 
