@@ -58,6 +58,16 @@ fn v1_user_documentation_is_present() {
     );
 }
 
+#[test]
+fn cargo_audit_action_receives_the_github_token() {
+    let workflow = read_repository_file(".github/workflows/ci.yml");
+
+    assert!(
+        workflow.contains("token: ${{ secrets.GITHUB_TOKEN }}"),
+        "rustsec/audit-check requires the GitHub token input"
+    );
+}
+
 fn release_workflow() -> PathBuf {
     let workflows = repository_path(".github/workflows");
     let entries = fs::read_dir(&workflows)

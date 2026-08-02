@@ -49,7 +49,8 @@ impl GuardedPath {
                 .expect("make guarded command executable");
         }
         let dirname = directory.join("dirname");
-        fs::write(&dirname, "#!/bin/sh\n/bin/dirname \"$@\"\n").expect("write dirname wrapper");
+        fs::write(&dirname, "#!/bin/sh\ncommand -p dirname \"$@\"\n")
+            .expect("write dirname wrapper");
         fs::set_permissions(&dirname, fs::Permissions::from_mode(0o755))
             .expect("make dirname wrapper executable");
         Self { directory }
