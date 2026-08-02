@@ -2,7 +2,7 @@
 
 This project follows Keep a Changelog style and uses semantic versioning.
 
-## [1.0.0] - Unreleased
+## [1.0.0] - 2026-08-02
 
 ### Release-candidate contract
 
