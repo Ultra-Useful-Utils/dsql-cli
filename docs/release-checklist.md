@@ -56,19 +56,29 @@ publication action and must not be inferred from CI configuration.
 - [ ] Run the separately authorized mutating suite only against its confirmed
   development cluster.
 - [ ] Review no critical/high dependency or code-security findings remain.
-- [ ] Protect the GitHub `release` environment and version tags with the
+- [x] Protect the GitHub `release` environment and version tags with the
   repository's required-reviewer and tag rules before pushing a release tag.
-- [ ] Confirm `CRATES_IO_API_KEY` is available for the initial crates.io publish.
+- [x] Confirm `CRATES_IO_API_KEY` is available for the initial crates.io publish.
   After the first release, configure crates.io Trusted Publishing for
   `.github/workflows/release.yml`, migrate the job to
   `rust-lang/crates-io-auth-action@v1`, and remove the long-lived secret.
 - [ ] Publish no artifacts until the RC review recommends the M6 gate.
-- [ ] Create and push a tag exactly matching `v` plus the `Cargo.toml` version;
+- [x] Create and push a tag exactly matching `v` plus the `Cargo.toml` version;
   the release workflow publishes crates.io first and then creates the GitHub
   Release with archives and evidence.
 - [ ] After approved publication, verify release archives, checksums,
   attestations, SBOM, `cargo install dsql-cli`, and first-run documentation on
   all four clean hosts.
+
+## v1.0.0 publication record (2026-08-02)
+
+- Published `dsql-cli` 1.0.0 to crates.io and generated its docs.rs page.
+- Published all four platform archives plus checksums, SBOM, dependency, and
+  license evidence to the GitHub Release.
+- Verified the downloaded checksums and Linux x86_64 archive, archive and SBOM
+  provenance, and a clean-root `cargo install dsql-cli --version 1.0.0 --locked`.
+- Clean-host verification on Linux arm64 and both macOS architectures remains
+  pending, as do the separately authorized live Aurora DSQL suites.
 
 ## Consumer verification
 

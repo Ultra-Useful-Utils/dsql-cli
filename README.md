@@ -7,21 +7,22 @@ by PostgreSQL shell workflows, not a `psql` compatibility layer.
 
 ## Status
 
-This project is a release candidate. Local checks, packaging metadata, and
-release automation are present; live Aurora DSQL validation and publication
-remain manual, explicitly authorized release gates. The client never creates,
-updates, or deletes a cluster.
+Version 1.0.0 is available on
+[crates.io](https://crates.io/crates/dsql-cli) and
+[GitHub Releases](https://github.com/Ultra-Useful-Utils/dsql-cli/releases).
+Live Aurora DSQL validation remains an explicitly authorized release gate. The
+client never creates, updates, or deletes a cluster.
 
 ## Install
 
-### crates.io (after publication)
+### crates.io
 
 ```sh
 cargo install dsql-cli --locked
 dsql --version
 ```
 
-### Release archive (after publication)
+### Release archive
 
 Download the archive for your platform and verify it against the published
 `SHA256SUMS` before adding `dsql` to `PATH`:
