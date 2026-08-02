@@ -1,0 +1,70 @@
+[package]
+name = "dsql-cli"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.94"
+license = "Apache-2.0"
+description = "Aurora DSQL command-line client"
+readme = "README.md"
+homepage = "https://github.com/Ultra-Useful-Utils/dsql-cli"
+repository = "https://github.com/Ultra-Useful-Utils/dsql-cli"
+documentation = "https://docs.rs/dsql-cli"
+keywords = ["aurora", "dsql", "aws", "postgresql", "cli"]
+categories = ["command-line-utilities", "database"]
+include = [
+    "/src/**",
+    "/tests/**",
+    "/docs/adr/**",
+    "/docs/cli.md",
+    "/docs/iam.md",
+    "/docs/interactive-shell.md",
+    "/docs/manual-qa.md",
+    "/docs/output-formats.md",
+    "/docs/release-checklist.md",
+    "/docs/security.md",
+    "/docs/testing.md",
+    "/docs/troubleshooting.md",
+    "/Cargo.toml",
+    "/Cargo.lock",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+]
+
+[[bin]]
+name = "dsql"
+path = "src/main.rs"
+
+[dependencies]
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-cloudwatch = { version = "1", default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-dsql = { version = "1", default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-sdk-sts = { version = "1", default-features = false, features = ["default-https-client", "rt-tokio"] }
+aws-types = "1"
+clap = { version = "4.5", features = ["derive"] }
+crossterm = "0.29"
+csv = "1"
+futures = "0.3"
+nu-ansi-term = "0.50"
+reedline = "0.48"
+ratatui = { version = "0.30", default-features = false, features = ["crossterm"] }
+rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs", "std", "tls12"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["io-util", "macros", "net", "rt-multi-thread", "signal", "time"] }
+tokio-postgres = "0.7.18"
+tokio-postgres-rustls = { version = "0.14", features = ["aws-lc-rs", "webpki-roots"] }
+unicode-width = "0.2"
+webpki-roots = "1"
+zeroize = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+aws-credential-types = "1"
+aws-smithy-async = { version = "1", features = ["test-util"] }
+expectrl = "0.8"
+rcgen = "0.14"
+serde_yaml = "0.9"
+tokio-rustls = { version = "0.26", default-features = false, features = ["aws_lc_rs", "tls12"] }

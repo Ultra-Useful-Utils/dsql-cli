@@ -1,0 +1,155 @@
+name: Release artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish an approved 1.0.0 release and crates.io package
+        required: true
+        default: false
+        type: boolean
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  package:
+    name: Package ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+            archive: dsql-x86_64-unknown-linux-musl.tar.gz
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            archive: dsql-aarch64-unknown-linux-musl.tar.gz
+          - runner: macos-13
+            target: x86_64-apple-darwin
+            archive: dsql-x86_64-apple-darwin.tar.gz
+          - runner: macos-14
+            target: aarch64-apple-darwin
+            archive: dsql-aarch64-apple-darwin.tar.gz
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94
+        with:
+          targets: ${{ matrix.target }}
+      - name: Install Linux musl linker
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes musl-tools
+      - name: Build release binary
+        run: cargo build --locked --release --target ${{ matrix.target }}
+      - name: Archive binary and required notices
+        shell: bash
+        run: |
+          mkdir -p dist/package
+          cp target/${{ matrix.target }}/release/dsql dist/package/dsql
+          cp LICENSE README.md dist/package/
+          tar -C dist/package -czf dist/${{ matrix.archive }} dsql LICENSE README.md
+      - name: Smoke packaged artifact
+        shell: bash
+        run: |
+          rm -rf dist/smoke
+          mkdir -p dist/smoke
+          tar -C dist/smoke -xzf dist/${{ matrix.archive }}
+          dist/smoke/dsql --help
+          dist/smoke/dsql --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: dist/${{ matrix.archive }}
+          if-no-files-found: error
+
+  release-evidence:
+    name: Create release evidence
+    needs: package
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist/artifacts
+          merge-multiple: true
+      - name: Create checksums and dependency/license report
+        shell: bash
+        run: |
+           sha256sum dist/artifacts/*.tar.gz > dist/SHA256SUMS
+           cargo tree --locked --edges normal > dist/DEPENDENCIES.txt
+           cargo install cargo-deny --version 0.20.2 --locked
+           cargo deny check licenses
+           cargo deny list --format json > dist/LICENSES.json
+      - name: Create SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          artifact-name: dsql-sbom
+          output-file: dist/sbom.spdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence
+          path: |
+            dist/SHA256SUMS
+            dist/DEPENDENCIES.txt
+            dist/LICENSES.json
+            dist/sbom.spdx.json
+            CHANGELOG.md
+          if-no-files-found: error
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/artifacts/*.tar.gz
+            dist/SHA256SUMS
+            dist/sbom.spdx.json
+
+  crates-io-dry-run:
+    name: crates.io package dry run
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94
+      # `cargo package --dry-run` is Cargo's default package behavior; cargo
+      # 1.94 has no separate --dry-run flag.
+      - run: cargo package --locked
+
+  publish:
+    name: Publish approved release
+    needs: [release-evidence, crates-io-dry-run]
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish crates.io package after protected approval
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_API_KEY }}
+        run: cargo publish --locked
+      - name: Publish GitHub release archives and notes
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body_path: CHANGELOG.md
+          files: |
+            dist/*.tar.gz
+            dist/SHA256SUMS
+            dist/sbom.spdx.json
+            dist/DEPENDENCIES.txt
+            dist/LICENSES.json

@@ -1,0 +1,39 @@
+# Dependency policy for the Apache-2.0 dsql-cli project.
+
+[graph]
+all-features = true
+
+[advisories]
+unmaintained = "workspace"
+ignore = []
+
+[licenses]
+# Current first-party and transitive dependencies use these permissive licenses.
+allow = [
+    "Apache-2.0",
+    "BlueOak-1.0.0",
+    "BSD-3-Clause",
+    "CDLA-Permissive-2.0",
+    "ISC",
+    "MIT",
+    "MIT-0",
+    "Unicode-3.0",
+    "Zlib",
+]
+confidence-threshold = 0.93
+exceptions = []
+
+[bans]
+# Report SDK-controlled version skew without blocking otherwise safe updates.
+multiple-versions = "warn"
+wildcards = "deny"
+deny = []
+skip = []
+skip-tree = []
+
+[sources]
+# Depend only on crates.io; any registry or Git source must be explicitly approved.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

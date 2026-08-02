@@ -1,0 +1,47 @@
+# Secrets and local credentials. Never commit private keys, AWS credentials, or
+# environment files used to supply them.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.csr
+*.der
+*.jks
+*.keystore
+*.credentials
+*.secret
+.aws/
+credentials/
+secrets/
+
+# Rust build and release output.
+/target/
+/dist/
+/coverage/
+*.profraw
+*.profdata
+
+# Editor and operating-system state.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local automation state and generated diagnostics.
+.a5c/
+manual-qa-report*.txt
+manual-qa-*.log
+
+# Internal planning, review, and validation evidence. Public documentation is
+# listed explicitly in Cargo.toml's package include list.
+/IMPLEMENTATION_PLAN.md
+/docs/reviews/
+/docs/metrics-validation.md
